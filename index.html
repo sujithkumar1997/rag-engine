@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RAG Analysis Engine</title>
+  <link rel="stylesheet" href="src/css/style.css" />
+</head>
+<body>
+  <div class="container">
+
+    <!-- Header -->
+    <header>
+      <div class="logo-area">
+        <h1>RAG Engine</h1>
+        <p>// RETRIEVAL-AUGMENTED GENERATION ANALYSIS</p>
+      </div>
+      <span class="badge">Powered by Claude</span>
+    </header>
+
+    <!-- Pipeline visualization -->
+    <div class="pipeline-vis" id="pipelineVis">
+      <div class="pipe-step"><div class="pipe-icon" id="pipe0">📄</div><div class="pipe-lbl">Ingest</div></div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-step"><div class="pipe-icon" id="pipe1">✂️</div><div class="pipe-lbl">Chunk</div></div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-step"><div class="pipe-icon" id="pipe2">🔢</div><div class="pipe-lbl">Embed</div></div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-step"><div class="pipe-icon" id="pipe3">🔍</div><div class="pipe-lbl">Retrieve</div></div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-step"><div class="pipe-icon" id="pipe4">🤖</div><div class="pipe-lbl">Generate</div></div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-step"><div class="pipe-icon" id="pipe5">💬</div><div class="pipe-lbl">Answer</div></div>
+    </div>
+
+    <div class="workspace">
+
+      <!-- LEFT: Document ingestion -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="dot dot-purple"></div>
+          <span>Knowledge Base</span>
+        </div>
+        <div class="panel-body">
+
+          <!-- PDF Upload -->
+          <div class="pdf-drop-zone" id="pdfDropZone">
+            <div class="pdf-drop-icon">📎</div>
+            <div class="pdf-drop-text">Drop a PDF here or <label for="pdfFileInput" class="pdf-browse-link">browse</label></div>
+            <div class="pdf-drop-sub">Supports text-based PDFs · Max 50 MB</div>
+            <input type="file" id="pdfFileInput" accept="application/pdf" style="display:none" />
+          </div>
+          <div id="pdfStatus"></div>
+
+          <div class="source-divider"><span>or paste text</span></div>
+
+          <label for="docInput">Source Document</label>
+          <textarea id="docInput" placeholder="Paste your document text here. This will be chunked, embedded, and indexed for retrieval..."></textarea>
+
+          <div class="row" style="margin-top:1rem;">
+            <div>
+              <label for="chunkStrategy">Chunking Strategy</label>
+              <select id="chunkStrategy">
+                <option value="fixed">Fixed Size</option>
+                <option value="sentence">Sentence-based</option>
+                <option value="paragraph" selected>Paragraph-based</option>
+              </select>
+            </div>
+            <div>
+              <label for="topK">Top-K Retrieval</label>
+              <div style="margin-top:0.4rem">
+                <div class="range-row">
+                  <input type="range" id="topK" min="1" max="6" value="3" />
+                  <span class="range-val" id="topKVal">3</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style="margin-top:1rem;">
+            <label for="chunkSize">Chunk Size (tokens ~words)</label>
+            <div class="range-row">
+              <input type="range" id="chunkSize" min="30" max="200" value="80" step="10" />
+              <span class="range-val" id="chunkSizeVal">80</span>
+            </div>
+          </div>
+
+          <div class="action-row">
+            <button class="btn btn-primary" id="indexBtn">⚡ Index Document</button>
+            <button class="btn btn-secondary btn-sm" id="loadSampleBtn">Load Sample</button>
+            <button class="btn btn-secondary btn-sm" id="clearBtn">Clear</button>
+          </div>
+
+          <div id="indexStatus"></div>
+          <div id="errorBox"></div>
+        </div>
+      </div>
+
+      <!-- RIGHT: Chunks view -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="dot dot-green"></div>
+          <span>Chunk Index</span>
+        </div>
+        <div class="panel-body">
+          <div id="chunksContainer">
+            <div class="empty-state">
+              <div class="icon">🗄️</div>
+              No chunks indexed yet.<br />Add a document and click Index.
+            </div>
+          </div>
+          <div class="stats-row" id="statsRow" style="display:none">
+            <div class="stat"><div class="stat-val" id="statChunks">0</div><div class="stat-lbl">Chunks</div></div>
+            <div class="stat"><div class="stat-val" id="statWords">0</div><div class="stat-lbl">Words</div></div>
+            <div class="stat"><div class="stat-val" id="statK">0</div><div class="stat-lbl">Retrieved</div></div>
+            <div class="stat"><div class="stat-val" id="statSim">—</div><div class="stat-lbl">Avg Sim</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- BOTTOM: Query + Answer -->
+      <div class="panel full-panel">
+        <div class="panel-header">
+          <div class="dot dot-red"></div>
+          <span>Query &amp; Generation</span>
+        </div>
+        <div class="panel-body">
+          <div class="row">
+            <div style="flex:3">
+              <label for="queryInput">Your Question</label>
+              <input type="text" id="queryInput" placeholder="Ask anything about your document..." />
+            </div>
+            <div style="flex:1; margin-top:auto;">
+              <button class="btn btn-primary" id="queryBtn" style="width:100%;margin-top:1.5rem;" disabled>Ask →</button>
+            </div>
+          </div>
+
+          <label style="margin-top:1.2rem;">Generated Answer</label>
+          <div class="answer-box" id="answerBox">
+            <span class="placeholder">Answer will appear here after you run a query...</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- API Key Modal -->
+  <div id="apiModal" class="modal-overlay" style="display:none;">
+    <div class="modal">
+      <h2>Enter Anthropic API Key</h2>
+      <p>Your key is stored only in memory and never sent anywhere except Anthropic's API.</p>
+      <input type="password" id="apiKeyInput" placeholder="sk-ant-..." />
+      <div class="action-row" style="margin-top:1rem;">
+        <button class="btn btn-primary" id="saveKeyBtn">Save Key</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- pdf.js (CDN) — used by pdfLoader.js for client-side PDF text extraction -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.min.mjs" type="module"></script>
+
+  <!-- JS Modules -->
+  <script type="module" src="src/js/main.js"></script>
+</body>
+</html>
